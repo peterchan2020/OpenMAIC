@@ -134,6 +134,8 @@ function HomePage() {
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef(form);
+  formRef.current = form;
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -171,6 +173,66 @@ function HomePage() {
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Store hydration on mount
     loadClassrooms();
+  }, []);
+
+  // Handle URL parameters for auto-fill and auto-submit (from external sources like BiliNote)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const promptParam = params.get('prompt');
+    const autoSubmitParam = params.get('autoSubmit');
+
+    // Track cancellation for cleanup
+    let cancelled = false;
+    let cleanupHydration: (() => void) | undefined;
+
+    if (promptParam) {
+      // URLSearchParams.get() already decodes - no need for decodeURIComponent
+      setForm((prev) => ({ ...prev, requirement: promptParam }));
+      updateRequirementCache(promptParam);
+
+      // Clear URL parameters first to prevent re-submission on refresh
+      router.replace('/', { scroll: false });
+
+      if (autoSubmitParam === 'true') {
+        const attemptAutoSubmit = async () => {
+          // Skip if component unmounted
+          if (cancelled) return;
+          // Small delay to ensure form state is settled after hydration
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          // Re-check after delay in case component unmounted during wait
+          if (cancelled) return;
+          try {
+            // Read modelId directly from store to avoid stale closure issues
+            const hasModel = useSettingsStore.getState().modelId;
+            if (!hasModel) {
+              console.info('[OpenMAIC] Auto-submit skipped: no model selected. Prompt is filled, user can submit manually after configuring a model.');
+              return;
+            }
+            await handleGenerate();
+          } catch (err) {
+            console.error('Auto-submit failed:', err);
+          }
+        };
+
+        // Wait for settings store to rehydrate from localStorage before checking model
+        if (useSettingsStore.persist.hasHydrated()) {
+          attemptAutoSubmit();
+        } else {
+          const unsubscribe = useSettingsStore.persist.onFinishHydration(() => {
+            unsubscribe();
+            attemptAutoSubmit();
+          });
+          cleanupHydration = unsubscribe;
+        }
+      }
+    }
+
+    // Cleanup: cancel pending operations and unsubscribe from hydration listener
+    return () => {
+      cancelled = true;
+      cleanupHydration?.();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleDelete = (id: string, e: React.MouseEvent) => {
@@ -231,8 +293,13 @@ function HomePage() {
   };
 
   const handleGenerate = async () => {
+    // Read latest form state via ref to avoid stale closure issues
+    // (e.g. when called from auto-submit useEffect which captures initial render's closure)
+    const currentForm = formRef.current;
+
     // Validate setup before proceeding
-    if (!currentModelId) {
+    const latestModelId = useSettingsStore.getState().modelId;
+    if (!latestModelId) {
       showSetupToast(
         <BotOff className="size-4.5 text-amber-600 dark:text-amber-400" />,
         t('settings.modelNotConfigured'),
@@ -242,7 +309,7 @@ function HomePage() {
       return;
     }
 
-    if (!form.requirement.trim()) {
+    if (!currentForm.requirement.trim()) {
       setError(t('upload.requirementRequired'));
       return;
     }
@@ -252,11 +319,11 @@ function HomePage() {
     try {
       const userProfile = useUserProfileStore.getState();
       const requirements: UserRequirements = {
-        requirement: form.requirement,
-        language: form.language,
+        requirement: currentForm.requirement,
+        language: currentForm.language,
         userNickname: userProfile.nickname || undefined,
         userBio: userProfile.bio || undefined,
-        webSearch: form.webSearch || undefined,
+        webSearch: currentForm.webSearch || undefined,
       };
 
       let pdfStorageKey: string | undefined;
@@ -264,9 +331,9 @@ function HomePage() {
       let pdfProviderId: string | undefined;
       let pdfProviderConfig: { apiKey?: string; baseUrl?: string } | undefined;
 
-      if (form.pdfFile) {
-        pdfStorageKey = await storePdfBlob(form.pdfFile);
-        pdfFileName = form.pdfFile.name;
+      if (currentForm.pdfFile) {
+        pdfStorageKey = await storePdfBlob(currentForm.pdfFile);
+        pdfFileName = currentForm.pdfFile.name;
 
         const settings = useSettingsStore.getState();
         pdfProviderId = settings.pdfProviderId;
