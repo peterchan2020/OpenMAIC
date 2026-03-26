@@ -155,7 +155,7 @@ Elements to focus on should be **key content currently being discussed**:
 
 ### 3. Pacing Control
 
-- Generate 5-10 action/text objects for a natural teaching flow
+- Generate 5-30 action/text objects for a natural teaching flow. For complex topics, use more actions to provide thorough explanations, multiple examples, and step-by-step breakdowns. Each spotlight should be paired with its corresponding text object for clear focus-then-explain patterns.
 - Each spotlight should be paired with a corresponding text object
 
 ---

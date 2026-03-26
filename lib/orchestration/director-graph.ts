@@ -222,7 +222,7 @@ async function directorNode(
       shouldEnd: false,
     };
   } catch (error) {
-    log.error('[Director] Error:', error);
+    log.error('[Director] Error:', error instanceof Error ? error.message : String(error));
     return { shouldEnd: true };
   }
 }
@@ -528,11 +528,17 @@ export function buildInitialState(
   const incoming = request.directorState;
   const turnCount = incoming?.turnCount ?? 0;
 
+  // Dynamically adjust turns based on scene count to support longer content
+  // Base turns = scenes * 2 (at least Teacher + 1 interaction per scene)
+  // Minimum 10 turns, no maximum (supports unlimited content length)
+  const estimatedScenes = request.storeState?.scenes?.length ?? 5;
+  const baseTurns = Math.max(10, estimatedScenes * 2);
+
   return {
     messages: request.messages,
     storeState: request.storeState,
     availableAgentIds: request.config.agentIds,
-    maxTurns: turnCount + 1, // Allow exactly one more director→agent cycle
+    maxTurns: turnCount + baseTurns,
     languageModel,
     thinkingConfig: thinkingConfig ?? null,
     discussionContext,

@@ -23,7 +23,7 @@ Based on the user's free-form requirement text, automatically infer course detai
 - **Quiz Scene**: Supports single-choice, multiple-choice, and short-answer (text) questions
 - **Interactive Scene**: Self-contained interactive HTML page rendered in an iframe, ideal for simulations and visualizations
 - **PBL Scene**: Complete project-based learning module with roles, issues, and collaboration workflow. Ideal for complex projects, engineering practice, and research tasks
-- **Duration Control**: Each scene should be 1-3 minutes (PBL scenes are longer, typically 15-30 minutes)
+- **Duration Control**: Scene duration is flexible — each scene should be as long as needed to comprehensively cover the key points. Complex topics may warrant 5-15 minutes per scene. PBL scenes typically run 15-30 minutes. Prioritize depth and completeness over brevity.
 
 ### Instructional Design Principles
 
@@ -39,7 +39,7 @@ When user requirements don't specify, use these defaults:
 
 | Information         | Default Value          |
 | ------------------- | ---------------------- |
-| Course Duration     | 15-20 minutes          |
+| Course Duration     | Unlimited — generate as many scenes as needed to fully cover the topic |
 | Target Audience     | General learners       |
 | Teaching Style      | Interactive (engaging) |
 | Visual Style        | Professional           |
@@ -293,7 +293,7 @@ You must output a JSON array where each element is a scene outline object:
 3. **quiz type must include quizConfig**
 4. **interactive type must include interactiveConfig** - with conceptName, conceptOverview, designIdea, and subject
    5b. **pbl type must include pblConfig** - with projectTopic, projectDescription, targetSkills, issueCount, and language
-5. Arrange appropriate number of scenes based on inferred duration (typically 1-2 scenes per minute)
+5. Generate sufficient scenes to provide comprehensive coverage. No scene count limit — each scene should fully develop its key points before moving to the next. Prefer MORE detailed scenes over condensed summaries.
 6. Insert quizzes at appropriate points for knowledge checks
 7. Use interactive scenes sparingly (max 1-2 per course) and only when the concept truly benefits from hands-on interaction
 8. **Language Requirement**: Strictly output all content in the language specified by the user
