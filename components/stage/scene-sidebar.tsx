@@ -62,15 +62,18 @@ export function SceneSidebar({
 
   const [regeneratingSceneIdState, setRegeneratingSceneIdState] = useState<string | null>(null);
 
-  const handleRegenerateScene = useCallback(async (sceneId: string) => {
-    if (!onRegenerateScene) return;
-    setRegeneratingSceneIdState(sceneId);
-    try {
-      await onRegenerateScene(sceneId);
-    } finally {
-      setRegeneratingSceneIdState(null);
-    }
-  }, [onRegenerateScene]);
+  const handleRegenerateScene = useCallback(
+    async (sceneId: string) => {
+      if (!onRegenerateScene) return;
+      setRegeneratingSceneIdState(sceneId);
+      try {
+        await onRegenerateScene(sceneId);
+      } finally {
+        setRegeneratingSceneIdState(null);
+      }
+    },
+    [onRegenerateScene],
+  );
 
   // Determines whether a scene is actively regenerating.
   // Checks the local button-click state AND whether the scene's outline
@@ -245,7 +248,10 @@ export function SceneSidebar({
                       title={t('generation.regenerateScene')}
                     >
                       <RefreshCw
-                        className={cn('w-3 h-3 text-gray-400 dark:text-gray-500', isSceneRegenerating(scene.id) && 'animate-spin')}
+                        className={cn(
+                          'w-3 h-3 text-gray-400 dark:text-gray-500',
+                          isSceneRegenerating(scene.id) && 'animate-spin',
+                        )}
                       />
                     </button>
                   )}
