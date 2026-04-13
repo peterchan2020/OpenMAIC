@@ -162,11 +162,11 @@ export default function ClassroomDetailPage() {
         stageInfo: {
           name: stage.name || '',
           description: stage.description,
-          language: stage.language,
+
           style: stage.style,
         },
         agents: params.agents,
-        userProfile: params.userProfile,
+        userProfile: params.userProfile,languageDirective: params.languageDirective || stage.languageDirective,
       });
     });
 

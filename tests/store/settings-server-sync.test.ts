@@ -7,6 +7,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
+import { isProviderUsable } from '@/lib/store/settings-validation';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be defined before importing the store
@@ -100,7 +101,10 @@ vi.mock('@/lib/audio/constants', () => ({
   },
 }));
 
-vi.mock('@/lib/audio/types', () => ({}));
+vi.mock('@/lib/audio/types', () => ({
+  isCustomTTSProvider: (id: string) => id.startsWith('custom-tts-'),
+  isCustomASRProvider: (id: string) => id.startsWith('custom-asr-'),
+}));
 
 vi.mock('@/lib/pdf/constants', () => ({
   PDF_PROVIDERS: {
@@ -309,7 +313,7 @@ describe('fetchServerProviders — provider availability sync', () => {
     expect(config.apiKey).toBe('');
     expect(config.isServerConfigured).toBe(false);
     // This is the condition model-selector uses to decide if a provider is usable:
-    const isUsable = !config.requiresApiKey || !!config.apiKey || !!config.isServerConfigured;
+    const isUsable = isProviderUsable(config);
     expect(isUsable).toBe(false);
   });
 
